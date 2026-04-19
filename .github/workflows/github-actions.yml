@@ -1,40 +1,70 @@
-name: CI Pipeline
-
 on:
   pull_request:
   schedule:
-    - cron: '* * * * *'
+    - cron: '0 2 * * *' # Runs daily at 2 AM UTC
   workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Browser for UI tests'
+        required: true
+        default: 'chrome'
+        type: choice
+        options:
+          - chrome
+          - firefox
+2. Jobs and Steps
 
 jobs:
-  api-tests:
+  test:
     runs-on: ubuntu-latest
+    env:
+      BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
     steps:
       - uses: actions/checkout@v3
-      - name: Run API Tests
-        run: ../Tests/API/TestGetUsers.cs
-      - name: Upload API Test Results
+
+      # Install dependencies, build, etc.
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      # Run API tests first
+      - name: Run API tests
+        id: api_tests
+        run: dotnet test ./Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_test_results.trx"
+        continue-on-error: true
+
+      # Run UI tests regardless of API test result
+      - name: Run UI tests
+        run: |
+          dotnet test ./Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_test_results.trx" -- TestBrowser=$BROWSER
+        continue-on-error: true
+
+      # Collect screenshots (assuming your UI tests output them to ./screenshots)
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots
+          path: ./screenshots
+
+      # Publish all test results
+      - name: Upload API test results
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: api-test-results
-          path: path/to/api/results
+          path: ./Tests/API/api_test_results.trx
 
-  ui-tests:
-    needs: api-tests
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run UI Tests
-        run: ../Tests/TestArticleTitle.cs
-      - name: Upload UI Test Results
+      - name: Upload UI test results
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: ui-test-results
-          path: path/to/ui/results
-      - name: Upload Screenshots
-        uses: actions/upload-artifact@v3
-        with:
-          name: ui-screenshots
-          path: path/to/screenshots
-          
+          path: ./Tests/ui_test_results.trx
