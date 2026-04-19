@@ -3,7 +3,7 @@ name: CI Pipeline
 on:
   pull_request:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '* * * * *'
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run API Tests
-        run: ./Tests/API/TestGetUsers.cs
+        run: ../Tests/API/TestGetUsers.cs
       - name: Upload API Test Results
         uses: actions/upload-artifact@v3
         with:
@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Run UI Tests
-        run: ./Tests/TestArticleTitle.cs
+        run: ../Tests/TestArticleTitle.cs
       - name: Upload UI Test Results
         uses: actions/upload-artifact@v3
         with:
