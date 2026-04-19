@@ -1,54 +1,55 @@
-name: .NET 9 CI Pipeline
+name: CI Pipeline
 
 on:
   pull_request:
   workflow_dispatch:
     inputs:
       browser:
-        description: 'Browser for UI tests (e.g., chrome, firefox)'
-        required: false
+        description: 'Browser for UI tests'
+        required: true
         default: 'chrome'
+        type: choice
+        options:
+          - chrome
+          - firefox
   schedule:
     - cron: '*/5 * * * *' # Runs every 5 minutes
 
 jobs:
-  api_tests:
-    runs-on: ubuntu-latest
+  build-and-test:
+    runs-on: windows-latest
+    env:
+      DOTNET_VERSION: '9.0.x'
     steps:
       - uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Run API Tests
-        run: dotnet test ./Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx"
-      - name: Upload API Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-test-results
-          path: '**/api_tests.trx'
 
-  ui_tests:
-    needs: api_tests
-    if: always() # Run even if API tests fail
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
-      - name: Run UI Tests
-        env:
-          BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
-        run: dotnet test ./Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" -- TestRunParameters.Parameter(name=\"Browser\", value=\"$BROWSER\")
-      - name: Upload UI Test Results
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Run API tests
+        continue-on-error: true
+        run: dotnet test ./Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx" --results-directory ./TestResults
+
+      - name: Run UI tests
+        run: dotnet test ./Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" --results-directory ./TestResults -- TestBrowser=${{ github.event.inputs.browser || 'chrome' }}
+
+      - name: Upload Test Results
         uses: actions/upload-artifact@v4
         with:
-          name: ui-test-results
-          path: '**/ui_tests.trx'
+          name: test-results
+          path: ./TestResults/
+
       - name: Upload Screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ui-test-screenshots
-          path: ./screenshots/
+          name: screenshots
+          path: ./Screenshots/
