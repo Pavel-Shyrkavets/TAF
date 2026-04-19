@@ -38,7 +38,3 @@ jobs:
           name: ui-screenshots
           path: path/to/screenshots
           
-          
-          name: ui-screenshots
-          path: path/to/screenshots
-    
