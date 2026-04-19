@@ -1,0 +1,44 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  api-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run API Tests
+        run: ./Tests/API/TestGetUsers.cs
+      - name: Upload API Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-test-results
+          path: path/to/api/results
+
+  ui-tests:
+    needs: api-tests
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run UI Tests
+        run: ./Tests/TestArticleTitle.cs
+      - name: Upload UI Test Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: ui-test-results
+          path: path/to/ui/results
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v3
+        with:
+          name: ui-screenshots
+          path: path/to/screenshots
+          
+          
+          name: ui-screenshots
+          path: path/to/screenshots
+    
