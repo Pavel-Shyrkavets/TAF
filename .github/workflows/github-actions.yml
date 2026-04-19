@@ -1,7 +1,7 @@
 on:
   pull_request:
   schedule:
-    - cron: '0 2 * * *' # Runs daily at 2 AM UTC
+    - cron: '*/5 * * * *' # Runs every 5 minutes
   workflow_dispatch:
     inputs:
       browser:
@@ -12,7 +12,6 @@ on:
         options:
           - chrome
           - firefox
-2. Jobs and Steps
 
 jobs:
   test:
