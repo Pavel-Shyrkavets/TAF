@@ -35,12 +35,12 @@ jobs:
         run: dotnet build --no-restore
       - name: Run API tests
         continue-on-error: true
-        run: dotnet test ../Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx" --results-directory ../TestResults
+        run: dotnet test Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx" --results-directory TestResults
       - name: Upload API Test Results
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
-          path: ../TestResults/
+          path: TestResults/
 
   ui-tests:
     runs-on: windows-latest
@@ -57,15 +57,15 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
       - name: Run UI tests
-        run: dotnet test ../Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" --results-directory ../TestResults -- TestBrowser=${{ github.event.inputs.browser || 'chrome' }}
+        run: dotnet test Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" --results-directory TestResults -- TestBrowser=${{ github.event.inputs.browser || 'chrome' }}
       - name: Upload UI Test Results
         uses: actions/upload-artifact@v4
         with:
           name: ui-test-results
-          path: ../TestResults/
+          path: TestResults/
       - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: screenshots
-          path: ../Screenshots/
+          path: Screenshots/
