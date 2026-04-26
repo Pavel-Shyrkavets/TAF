@@ -35,12 +35,12 @@ jobs:
         run: dotnet build --no-restore
       - name: Run API tests
         continue-on-error: true
-        run: dotnet test TAF/Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx" --results-directory TAF/TestResults
+        run: dotnet test "TAF/Tests/API/TestGetUsers.cs" --logger "trx;LogFileName=api_tests.trx" --results-directory "TAF/TestResults"
       - name: Upload API Test Results
         uses: actions/upload-artifact@v4
         with:
           name: api-test-results
-          path: TAF/TestResults/
+          path: "TAF/TestResults/"
 
   ui-tests:
     runs-on: windows-latest
