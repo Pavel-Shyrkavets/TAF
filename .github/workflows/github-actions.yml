@@ -2,6 +2,9 @@ name: CI Pipeline
 
 on:
   pull_request:
+    branches:
+      - main
+      - dev
   workflow_dispatch:
     inputs:
       browser:
@@ -13,40 +16,53 @@ on:
           - chrome
           - firefox
   schedule:
-    - cron: '*/5 * * * *' # Runs every 5 minutes
+    - cron: '0 0 * * *' # Runs at 00:00
 
 jobs:
-  build-and-test:
+  api-tests:
     runs-on: windows-latest
     env:
       DOTNET_VERSION: '9.0.x'
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: Restore dependencies
         run: dotnet restore
-
       - name: Build
         run: dotnet build --no-restore
-
       - name: Run API tests
         continue-on-error: true
         run: dotnet test ./Tests/API/TestGetUsers.cs --logger "trx;LogFileName=api_tests.trx" --results-directory ./TestResults
-
-      - name: Run UI tests
-        run: dotnet test ./Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" --results-directory ./TestResults -- TestBrowser=${{ github.event.inputs.browser || 'chrome' }}
-
-      - name: Upload Test Results
+      - name: Upload API Test Results
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
+          name: api-test-results
           path: ./TestResults/
 
+  ui-tests:
+    runs-on: windows-latest
+    env:
+      DOTNET_VERSION: '9.0.x'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Run UI tests
+        run: dotnet test ./Tests/TestArticleTitle.cs --logger "trx;LogFileName=ui_tests.trx" --results-directory ./TestResults -- TestBrowser=${{ github.event.inputs.browser || 'chrome' }}
+      - name: Upload UI Test Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: ./TestResults/
       - name: Upload Screenshots
         if: always()
         uses: actions/upload-artifact@v4
